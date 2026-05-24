@@ -1,3 +1,3 @@
 # AfterFees
 
-![AfterFees logo](resized-image.jpeg)
+![AfterFees logo](AppIcon.png)
