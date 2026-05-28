@@ -16,7 +16,6 @@ struct ContentView: View {
     @FocusState private var focusedField: Field?
 
     @State private var secretTapCount = 0
-    @State private var showSecretMessage = false
 
     @Namespace private var animation
 
@@ -76,6 +75,7 @@ struct ContentView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     
+                    // --- PAYOUT HEADER ---
                     VStack(spacing: 8) {
                         Text("Payout")
                             .font(.system(size: 13, weight: .regular, design: .monospaced))
@@ -96,12 +96,7 @@ struct ContentView: View {
                                 copyToClipboard()
                             }
                         
-                        if showSecretMessage {
-                            Text(secretMessageText)
-                                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                                .foregroundColor(.red)
-                                .transition(.opacity)
-                        } else if showCopiedMessage {
+                        if showCopiedMessage {
                             Text("copied to clipboard.")
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                                 .foregroundColor(.green)
@@ -113,6 +108,7 @@ struct ContentView: View {
                     .padding(.top, 40)
                     .padding(.bottom, 20)
 
+                    // --- INPUT GRIDS ---
                     VStack(spacing: 16) {
                         HStack(spacing: 16) {
                             inputCard(title: "ITEM PRICE", text: $itemPrice, field: .price)
@@ -123,6 +119,7 @@ struct ContentView: View {
                         pickerCard(title: "BUYER STATE", selection: $selectedState, options: ["Choose State"] + stateTaxes.keys.filter { $0 != "Choose State" }.sorted())
                     }
                     
+                    // --- TOGGLES AND SETTINGS ---
                     VStack(spacing: 16) {
                         toggleCard(title: "250+ listings used this month?", isOn: $over250Listings)
                         
@@ -176,13 +173,23 @@ struct ContentView: View {
                         toggleCard(title: "International Buyer", isOn: $internationalBuyer)
                     }
 
+                    // --- CLEAR ALL BUTTON (CLEAN FLAT STYLE) ---
                     Button(action: clearAllFields) {
-                        Text("Clear All Inputs")
-                            .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundColor(Color(white: 0.4))
-                            .underline()
+                        HStack {
+                            Spacer()
+                            Text("CLEAR ALL INPUTS")
+                                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                .foregroundColor(Color(white: 0.4))
+                            Spacer()
+                        }
+                        .padding()
+                        .background(Color(white: 0.05))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(white: 0.15), lineWidth: 1)
+                        )
                     }
-                    .padding(.vertical, 8)
 
                     ResultsSection(calculator: calculator, showBreakdown: $showBreakdown, animation: animation)
                 }
@@ -200,30 +207,17 @@ struct ContentView: View {
         .onChange(of: internationalBuyer) { oldValue, newValue in haptic.impactOccurred() }
         .onChange(of: over250Listings) { oldValue, newValue in haptic.impactOccurred() }
     }
-    
-    private var secretMessageText: String {
-        switch secretTapCount {
-        case 3: return "oh fuck please dont touch me"
-        case 4: return "seriously, stop it"
-        case 5: return "im trying to calculate fees here"
-        case 6: return "keep going and see what happens"
-        case 7: return "last warning"
-        case 8: return "i swear to god"
-        case 9: return "OH ONE MORE FUCKING TIME AND ILL CRASH THIS APP"
-        default: return ""
-        }
-    }
 
     private func handleSecretTap() {
         secretTapCount += 1
-        haptic.impactOccurred(intensity: 0.5)
         
-        if secretTapCount >= 3 && secretTapCount <= 9 {
-            withAnimation { showSecretMessage = true }
+        if secretTapCount >= 3 && secretTapCount < 10 {
+            // Give an increasingly heavy vibration on every tap after 3
+            haptic.impactOccurred(intensity: CGFloat(Double(secretTapCount) / 10.0))
         }
         
         if secretTapCount >= 10 {
-            fatalError("User requested app suicide via continuous tapping.")
+            fatalError("OH ONE MORE FUCKING TIME AND ILL CRASH THIS APP")
         }
     }
 
@@ -241,12 +235,10 @@ struct ContentView: View {
             showBreakdown = false
             focusedField = nil
             secretTapCount = 0
-            showSecretMessage = false
         }
     }
     
     private func copyToClipboard() {
-        if showSecretMessage { return }
         haptic.impactOccurred(intensity: 0.8)
         UIPasteboard.general.string = String(format: "%.2f", calculator.payout)
         withAnimation { showCopiedMessage = true }
