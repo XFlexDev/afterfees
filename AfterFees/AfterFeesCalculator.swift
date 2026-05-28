@@ -8,7 +8,6 @@
 import Foundation
 
 struct AfterFeesCalculator {
-
     let itemValue: Double
     let shippingValue: Double
     let selectedCategory: String
@@ -17,9 +16,8 @@ struct AfterFeesCalculator {
     let promotedEnabled: Bool
     let promotedRate: Double
     let internationalBuyer: Bool
-
     let stateTaxes: [String: Double]
-    
+
     var estimatedTax: Double {
         let taxRate = stateTaxes[selectedState] ?? 0
         return itemValue * (taxRate / 100)
@@ -49,40 +47,33 @@ struct AfterFeesCalculator {
 
     var sellerFees: Double {
         switch selectedCategory {
-
         case "Most Categories":
             if itemValue <= 7500 {
                 return (itemValue * 0.1325) + fixedFee
             }
             return (7500 * 0.1325) + ((itemValue - 7500) * 0.0235) + fixedFee
-
         case "Books / Movies / Music / Media":
             if itemValue <= 7500 {
                 return (itemValue * 0.153) + fixedFee
             }
             return (7500 * 0.153) + ((itemValue - 7500) * 0.0235) + fixedFee
-
         case "Women's Bags":
             if itemValue <= 2000 {
                 return (itemValue * 0.15) + fixedFee
             }
             return (2000 * 0.15) + ((itemValue - 2000) * 0.09) + fixedFee
-
         case "Musical Instruments":
             if itemValue <= 7500 {
                 return (itemValue * 0.067) + fixedFee
             }
             return (7500 * 0.067) + ((itemValue - 7500) * 0.0235) + fixedFee
-
         case "Trading Cards / Collectibles":
             if itemValue <= 7500 {
                 return (itemValue * 0.1325) + fixedFee
             }
             return (7500 * 0.1325) + ((itemValue - 7500) * 0.0235) + fixedFee
-
         case "NFTs":
             return (itemValue * 0.05) + fixedFee
-
         default:
             return (itemValue * 0.1325) + fixedFee
         }
@@ -99,20 +90,15 @@ struct AfterFeesCalculator {
     var displayedFeeRate: String {
         switch selectedCategory {
         case "Most Categories":
-            return itemValue > 7500 ? "13.25% → 2.35%"
-                : "13.25%"
+            return itemValue > 7500 ? "13.25% → 2.35%" : "13.25%"
         case "Books / Movies / Music / Media":
-            return itemValue > 7500 ? "15.3% → 2.35%"
-                : "15.3%"
+            return itemValue > 7500 ? "15.3% → 2.35%" : "15.3%"
         case "Women's Bags":
-            return itemValue > 2000 ? "15% → 9%"
-                : "15%"
+            return itemValue > 2000 ? "15% → 9%" : "15%"
         case "Musical Instruments":
-            return itemValue > 7500 ? "6.7% → 2.35%"
-                : "6.7%"
+            return itemValue > 7500 ? "6.7% → 2.35%" : "6.7%"
         case "Trading Cards / Collectibles":
-            return itemValue > 7500 ? "13.25% → 2.35%"
-                : "13.25%"
+            return itemValue > 7500 ? "13.25% → 2.35%" : "13.25%"
         case "NFTs":
             return "5%"
         default:
