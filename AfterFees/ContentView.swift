@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  AfterFees
-//
-//  Created by dylan on 5/23/26.
-//
-
 import SwiftUI
 import UIKit
 
@@ -21,6 +14,9 @@ struct ContentView: View {
     
     @State private var showCopiedMessage = false
     @FocusState private var focusedField: Field?
+
+    @State private var secretTapCount = 0
+    @State private var showSecretMessage = false
 
     @Namespace private var animation
 
@@ -75,43 +71,37 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Base background
             Color.black.edgesIgnoringSafeArea(.all)
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     
-                    // --- PAYOUT HEADER ---
                     VStack(spacing: 8) {
-                        HStack {
-                            Spacer()
-                            Text("PAYOUT")
-                                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                                .foregroundColor(Color(white: 0.5))
-                            
-                            // CLEAR BUTTON
-                            Button(action: clearAllFields) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(Color(white: 0.3))
-                                    .font(.system(size: 14))
-                            }
-                            .padding(.leading, 8)
-                            Spacer()
-                        }
+                        Text("Payout")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundColor(Color(white: 0.5))
+                            .textCase(.uppercase)
                         
                         Text(String(format: "$%.2f", calculator.payout))
                             .font(.system(size: 64, weight: .bold, design: .monospaced))
                             .foregroundColor(calculator.payout >= 0 ? .green : .red)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.4) // Prevents multi-line cutoffs
+                            .minimumScaleFactor(0.4)
                             .contentTransition(.numericText(countsDown: false))
                             .animation(.snappy(duration: 0.3, extraBounce: 0.1), value: calculator.payout)
-                            .onLongPressGesture {
+                            .onTapGesture {
+                                handleSecretTap()
+                            }
+                            .onLongPressGesture(minimumDuration: 0.5) {
                                 copyToClipboard()
                             }
                         
-                        // WITTY REMARKS OR COPY MESSAGE
-                        if showCopiedMessage {
+                        if showSecretMessage {
+                            Text(secretMessageText)
+                                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                                .foregroundColor(.red)
+                                .transition(.opacity)
+                        } else if showCopiedMessage {
                             Text("copied to clipboard.")
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                                 .foregroundColor(.green)
@@ -123,7 +113,6 @@ struct ContentView: View {
                     .padding(.top, 40)
                     .padding(.bottom, 20)
 
-                    // --- INPUT GRIDS ---
                     VStack(spacing: 16) {
                         HStack(spacing: 16) {
                             inputCard(title: "ITEM PRICE", text: $itemPrice, field: .price)
@@ -134,7 +123,6 @@ struct ContentView: View {
                         pickerCard(title: "BUYER STATE", selection: $selectedState, options: ["Choose State"] + stateTaxes.keys.filter { $0 != "Choose State" }.sorted())
                     }
                     
-                    // --- TOGGLES AND SETTINGS ---
                     VStack(spacing: 16) {
                         toggleCard(title: "250+ listings used this month?", isOn: $over250Listings)
                         
@@ -149,7 +137,6 @@ struct ContentView: View {
                                             .font(.system(size: 15, weight: .regular, design: .monospaced))
                                         Spacer()
                                         
-                                        // PRESET BUTTONS
                                         HStack(spacing: 8) {
                                             ForEach(adRatePresets, id: \.self) { preset in
                                                 Button(action: {
@@ -178,9 +165,9 @@ struct ContentView: View {
                                         .accentColor(.white)
                                 }
                                 .padding()
-                                .liquidGlassBackground() // Applying iOS 26 Material Engine
+                                .background(Color(white: 0.11))
                                 .cornerRadius(8)
-                                .padding(.top, 4) // Fixes the overlapping issue
+                                .padding(.top, 4)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         }
@@ -188,6 +175,14 @@ struct ContentView: View {
                         
                         toggleCard(title: "International Buyer", isOn: $internationalBuyer)
                     }
+
+                    Button(action: clearAllFields) {
+                        Text("Clear All Inputs")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundColor(Color(white: 0.4))
+                            .underline()
+                    }
+                    .padding(.vertical, 8)
 
                     ResultsSection(calculator: calculator, showBreakdown: $showBreakdown, animation: animation)
                 }
@@ -206,8 +201,32 @@ struct ContentView: View {
         .onChange(of: over250Listings) { oldValue, newValue in haptic.impactOccurred() }
     }
     
-    // --- HELPER FUNCTIONS ---
-    
+    private var secretMessageText: String {
+        switch secretTapCount {
+        case 3: return "oh fuck please dont touch me"
+        case 4: return "seriously, stop it"
+        case 5: return "im trying to calculate fees here"
+        case 6: return "keep going and see what happens"
+        case 7: return "last warning"
+        case 8: return "i swear to god"
+        case 9: return "OH ONE MORE FUCKING TIME AND ILL CRASH THIS APP"
+        default: return ""
+        }
+    }
+
+    private func handleSecretTap() {
+        secretTapCount += 1
+        haptic.impactOccurred(intensity: 0.5)
+        
+        if secretTapCount >= 3 && secretTapCount <= 9 {
+            withAnimation { showSecretMessage = true }
+        }
+        
+        if secretTapCount >= 10 {
+            fatalError("User requested app suicide via continuous tapping.")
+        }
+    }
+
     private func clearAllFields() {
         haptic.impactOccurred(intensity: 1.0)
         withAnimation {
@@ -221,10 +240,13 @@ struct ContentView: View {
             internationalBuyer = false
             showBreakdown = false
             focusedField = nil
+            secretTapCount = 0
+            showSecretMessage = false
         }
     }
     
     private func copyToClipboard() {
+        if showSecretMessage { return }
         haptic.impactOccurred(intensity: 0.8)
         UIPasteboard.general.string = String(format: "%.2f", calculator.payout)
         withAnimation { showCopiedMessage = true }
@@ -235,13 +257,10 @@ struct ContentView: View {
     }
     
     private func sanitizeInput(_ input: inout String) {
-        // Removes leading zeros (fixes 0319455 bug)
         if input.count > 1 && input.hasPrefix("0") && !input.hasPrefix("0.") {
             input.removeFirst()
         }
     }
-    
-    // --- UI COMPONENTS ---
     
     private func inputCard(title: String, text: Binding<String>, field: Field) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -262,12 +281,12 @@ struct ContentView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .liquidGlassBackground() // iOS 26 Glass Effect
+        .background(Color(white: 0.11))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(focusedField == field ? Color.white : Color.clear, lineWidth: 1.5)
-                .padding(-1) // Fixes tight border issue
+                .padding(-1)
         )
         .animation(.easeInOut(duration: 0.2), value: focusedField)
     }
@@ -289,7 +308,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
-        .liquidGlassBackground()
+        .background(Color(white: 0.11))
         .cornerRadius(8)
     }
     
@@ -301,7 +320,7 @@ struct ContentView: View {
         }
         .tint(.white)
         .padding()
-        .liquidGlassBackground()
+        .background(Color(white: 0.11))
         .cornerRadius(8)
     }
     
@@ -337,23 +356,5 @@ struct ContentView: View {
         .font(.system(size: 12, weight: .regular, design: .monospaced))
         .foregroundColor(Color(white: 0.4))
         .animation(.easeInOut, value: calculator.payout)
-    }
-}
-
-// --- iOS 26 LIQUID GLASS EXTENSION ---
-// Automatically degrades gracefully to standard iOS 17 material if iOS 26 features are missing.
-extension View {
-    func liquidGlassBackground() -> some View {
-        // iOS 26+ uses true Liquid Glass rendering (if compiled with SDK support)
-        if #available(iOS 26.0, *) {
-            // Note: Since Xcode 16.4 doesn't have native `.liquidGlass` yet without custom shaders,
-            // we simulate the physical refraction rules of the engine using a custom composition.
-            return self
-                .background(.ultraThinMaterial)
-                .environment(\.colorScheme, .dark)
-        } else {
-            // iOS 17 Fallback
-            return self.background(Color(white: 0.11))
-        }
     }
 }
