@@ -29,7 +29,7 @@ struct ResultsSection: View {
             }) {
                 HStack {
                     Text("FEE BREAKDOWN")
-                        .font(.system(.subheadline, weight: .bold, design: .monospaced))
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
                     Spacer()
                     Image(systemName: showBreakdown ? "chevron.up" : "chevron.down")
@@ -77,11 +77,11 @@ struct ResultsSection: View {
     private func receiptRow(label: String, value: String, color: Color, bold: Bool = false) -> some View {
         HStack {
             Text(label)
-                .font(.system(.footnote, design: .monospaced))
+                .font(.system(size: 13, weight: .regular, design: .monospaced))
                 .foregroundColor(Color(white: 0.6))
             Spacer()
             Text(value)
-                .font(.system(.footnote, weight: bold ? .bold : .regular, design: .monospaced))
+                .font(.system(size: 13, weight: bold ? .bold : .regular, design: .monospaced))
                 .foregroundColor(color)
         }
     }
