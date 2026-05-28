@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  AfterFees
 //
-//  Created by dylan on 5/23/26. Buuuttt idk by Miska
+//  Created by dylan on 5/23/26.
 //
 
 import SwiftUI
@@ -78,7 +78,7 @@ struct ContentView: View {
                     
                     VStack(spacing: 8) {
                         Text("Payout")
-                            .font(.system(.subheadline, design: .monospaced))
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
                             .foregroundColor(Color(white: 0.5))
                             .textCase(.uppercase)
                         
@@ -102,7 +102,6 @@ struct ContentView: View {
                         pickerCard(title: "CATEGORY", selection: $selectedCategory, options: categories)
                         pickerCard(title: "BUYER STATE", selection: $selectedState, options: ["Choose State"] + stateTaxes.keys.filter { $0 != "Choose State" }.sorted())
                     }
-                    .blur(radius: focusedField == nil ? 0 : 0) 
                     
                     VStack(spacing: 16) {
                         toggleCard(title: "250+ listings used this month?", isOn: $over250Listings)
@@ -115,11 +114,11 @@ struct ContentView: View {
                                     HStack {
                                         Text("Ad Rate")
                                             .foregroundColor(Color(white: 0.5))
-                                            .font(.system(.subheadline, design: .monospaced))
+                                            .font(.system(size: 15, weight: .regular, design: .monospaced))
                                         Spacer()
                                         Text("\(promotedRate, specifier: "%.1f")%")
                                             .foregroundColor(.white)
-                                            .font(.system(.subheadline, design: .monospaced))
+                                            .font(.system(size: 15, weight: .regular, design: .monospaced))
                                     }
                                     Slider(value: $promotedRate, in: 1...20, step: 0.5)
                                         .accentColor(.white)
@@ -145,24 +144,24 @@ struct ContentView: View {
         .onAppear {
             haptic.prepare()
         }
-        .onChange(of: promotedEnabled) { _ in haptic.impactOccurred() }
-        .onChange(of: internationalBuyer) { _ in haptic.impactOccurred() }
-        .onChange(of: over250Listings) { _ in haptic.impactOccurred() }
+        .onChange(of: promotedEnabled) { oldValue, newValue in haptic.impactOccurred() }
+        .onChange(of: internationalBuyer) { oldValue, newValue in haptic.impactOccurred() }
+        .onChange(of: over250Listings) { oldValue, newValue in haptic.impactOccurred() }
     }
     
     private func inputCard(title: String, text: Binding<String>, field: Field) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
                 .foregroundColor(Color(white: 0.5))
             
             HStack(spacing: 4) {
                 Text("$")
                     .foregroundColor(Color(white: 0.3))
-                    .font(.system(.title2, design: .monospaced))
+                    .font(.system(size: 22, weight: .regular, design: .monospaced))
                 TextField("0.00", text: text)
                     .keyboardType(.decimalPad)
-                    .font(.system(.title2, design: .monospaced))
+                    .font(.system(size: 22, weight: .regular, design: .monospaced))
                     .foregroundColor(.white)
                     .focused($focusedField, equals: field)
             }
@@ -181,7 +180,7 @@ struct ContentView: View {
     private func pickerCard(title: String, selection: Binding<String>, options: [String]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
                 .foregroundColor(Color(white: 0.5))
             
             Picker("", selection: selection) {
@@ -202,7 +201,7 @@ struct ContentView: View {
     private func toggleCard(title: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
             Text(title)
-                .font(.system(.subheadline, design: .monospaced))
+                .font(.system(size: 15, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
         }
         .tint(.white)
@@ -240,7 +239,7 @@ struct ContentView: View {
                 Text("app and witty remarks written by bitetheapple")
             }
         }
-        .font(.system(.caption, design: .monospaced))
+        .font(.system(size: 12, weight: .regular, design: .monospaced))
         .foregroundColor(Color(white: 0.4))
         .animation(.easeInOut, value: calculator.payout)
     }
