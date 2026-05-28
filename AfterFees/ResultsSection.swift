@@ -8,174 +8,81 @@
 import SwiftUI
 
 struct ResultsSection: View {
-    let totalSaleText: String
-    let estimatedTaxText: String
-    let totalBuyerCostText: String
-    let feeRate: String
-    let sellerFeesText: String
-    let insertionFeeText: String
-    let promotedFeeText: String
-    let internationalFeeText: String
-    let totalSellerCostText: String
-    let shippingText: String
-    let payoutText: String
+    let calculator: AfterFeesCalculator
+    @Binding var showBreakdown: Bool
+    var animation: Namespace.ID
 
-    let showInsertionFee: Bool
-    let showPromotedFee: Bool
-    let showInternationalFee: Bool
-
-    let payout: Double
-    let sellerFees: Double
-    let shippingValue: Double
-    let itemValue: Double
-    let promotedRate: Double
-    let listingsUsed: Int
-    let internationalBuyer: Bool
-
-    var basicRows: some View {
-        Group {
-            HStack {
-                Text("Total Sale (Before Shipping)")
-                Spacer()
-                Text(totalSaleText)
-                    .foregroundColor(.green)
-            }
-
-            HStack {
-                Text("Shipping Cost")
-                Spacer()
-                Text(shippingText)
-                    .foregroundColor(.red)
-            }
-
-            HStack {
-                Text("Estimated Sales Tax")
-                Spacer()
-                Text(estimatedTaxText)
-                    .foregroundColor(.orange)
-            }
-
-            HStack {
-                Text("Total Buyer Cost")
-                Spacer()
-                Text(totalBuyerCostText)
-                    .foregroundColor(.green)
-                    .fontWeight(.bold)
-            }
-        }
+    var totalSaleText: String { String(format: "$%.2f", calculator.itemValue) }
+    var shippingText: String { String(format: "$%.2f", calculator.shippingValue) }
+    var estimatedTaxText: String { String(format: "$%.2f", calculator.estimatedTax) }
+    
+    var totalBuyerCost: Double {
+        calculator.itemValue + calculator.shippingValue + calculator.estimatedTax
     }
-    var optionalFeeRows: some View {
-        Group {
-            HStack {
-                Text("Fee Rate")
-                Spacer()
-                Text(feeRate)
-                    .foregroundColor(.orange)
-            }
-
-            HStack {
-                Text("Seller Fees")
-                Spacer()
-                Text(sellerFeesText)
-                    .foregroundColor(.red)
-            }
-
-            if showInsertionFee {
-                HStack {
-                    Text("Insertion Fee")
-                    Spacer()
-                    Text(insertionFeeText)
-                        .foregroundColor(.red)
-                }
-            }
-
-            if showPromotedFee {
-                HStack {
-                    Text("Promoted Fee")
-                    Spacer()
-                    Text(promotedFeeText)
-                        .foregroundColor(.red)
-                }
-            }
-
-            if showInternationalFee {
-                HStack {
-                    Text("International Fee")
-                    Spacer()
-                    Text(internationalFeeText)
-                        .foregroundColor(.red)
-                }
-            }
-
-            HStack {
-                Text("Total Seller Fee Cost")
-                Spacer()
-                Text(totalSellerCostText)
-                    .foregroundColor(.red)
-                    .fontWeight(.bold)
-            }
-        }
-    }
-
-    var wittyRemarks: some View {
-        Group {
-            if payout < 0 {
-                Text("congratulations, you paid eBay to take your item")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if payout < 5 && itemValue > 0 {
-                Text("why are you selling this lol")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if sellerFees > 50 {
-                Text("eBay sends their regards")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if shippingValue > itemValue && itemValue > 0 {
-                Text("what are you shipping, a refrigerator?")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if promotedRate > 15 && showPromotedFee {
-                Text("you're just buying acres of ad now")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if internationalBuyer && sellerFees > 50 {
-                Text("global financial devastation")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-
+    
     var body: some View {
-        Section(header: Text("RESULTS")) {
-
-            Text("Buyer Costs")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            basicRows
-
-            Text("Seller Costs")
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            optionalFeeRows
-
-            HStack {
-                Text("You Make")
-                Spacer()
-                Text(payoutText)
-                    .foregroundColor(.green)
-                    .fontWeight(.bold)
+        VStack(spacing: 0) {
+            Button(action: {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    showBreakdown.toggle()
+                }
+            }) {
+                HStack {
+                    Text("FEE BREAKDOWN")
+                        .font(.system(.subheadline, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: showBreakdown ? "chevron.up" : "chevron.down")
+                        .foregroundColor(Color(white: 0.5))
+                }
+                .padding()
+                .background(Color(white: 0.11))
             }
-
-            wittyRemarks
+            .buttonStyle(PlainButtonStyle())
+            
+            if showBreakdown {
+                VStack(spacing: 16) {
+                    Group {
+                        receiptRow(label: "Total Sale", value: totalSaleText, color: .white)
+                        receiptRow(label: "Shipping Cost", value: shippingText, color: .white)
+                        receiptRow(label: "Estimated Tax", value: estimatedTaxText, color: Color(white: 0.6))
+                        Divider().background(Color(white: 0.2))
+                        receiptRow(label: "Total Buyer Cost", value: String(format: "$%.2f", totalBuyerCost), color: .green, bold: true)
+                    }
+                    
+                    Group {
+                        receiptRow(label: "Base Fee (\(calculator.displayedFeeRate))", value: String(format: "-$%.2f", calculator.sellerFees), color: .red)
+                        
+                        if calculator.insertionFee > 0 {
+                            receiptRow(label: "Insertion Fee", value: String(format: "-$%.2f", calculator.insertionFee), color: .red)
+                        }
+                        if calculator.promotedFee > 0 {
+                            receiptRow(label: "Promoted Fee", value: String(format: "-$%.2f", calculator.promotedFee), color: .red)
+                        }
+                        if calculator.internationalFee > 0 {
+                            receiptRow(label: "International Fee", value: String(format: "-$%.2f", calculator.internationalFee), color: .red)
+                        }
+                        Divider().background(Color(white: 0.2))
+                        receiptRow(label: "Total Seller Fees", value: String(format: "-$%.2f", calculator.totalFees), color: .red, bold: true)
+                    }
+                }
+                .padding()
+                .background(Color(white: 0.11))
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    
+    private func receiptRow(label: String, value: String, color: Color, bold: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(.footnote, design: .monospaced))
+                .foregroundColor(Color(white: 0.6))
+            Spacer()
+            Text(value)
+                .font(.system(.footnote, weight: bold ? .bold : .regular, design: .monospaced))
+                .foregroundColor(color)
         }
     }
 }
