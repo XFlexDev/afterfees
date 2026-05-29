@@ -11,45 +11,36 @@ struct ContentView: View {
     @State private var promotedRate = 5.0
     @State private var internationalBuyer = false
     @State private var showBreakdown = false
-    
     @State private var showCopiedMessage = false
     @FocusState private var focusedField: Field?
-
     @State private var secretTapCount = 0
-
-    @Namespace private var animation
 
     enum Field {
         case price, shipping
     }
 
-    let haptic = UIImpactFeedbackGenerator(style: .light)
+    let haptic = UIImpactFeedbackGenerator(style: .rigid)
 
     let stateTaxes: [String: Double] = [
-        "Choose State": 0.0,
-        "Alabama": 4.0, "Alaska": 0.0, "Arizona": 5.6, "Arkansas": 6.5, "California": 7.25,
-        "Colorado": 2.9, "Connecticut": 6.35, "Delaware": 0.0, "District of Columbia": 6.0,
-        "Florida": 6.0, "Georgia": 4.0, "Hawaii": 4.0, "Idaho": 6.0, "Illinois": 6.25,
-        "Indiana": 7.0, "Iowa": 6.0, "Kansas": 6.5, "Kentucky": 6.0, "Louisiana": 4.45,
-        "Maine": 5.5, "Maryland": 6.0, "Massachusetts": 6.25, "Michigan": 6.0, "Minnesota": 6.875,
-        "Mississippi": 7.0, "Missouri": 4.225, "Montana": 0.0, "Nebraska": 5.5, "Nevada": 6.85,
-        "New Hampshire": 0.0, "New Jersey": 6.625, "New Mexico": 5.125, "New York": 4.0,
-        "North Carolina": 4.75, "North Dakota": 5.0, "Ohio": 5.75, "Oklahoma": 4.5, "Oregon": 0.0,
-        "Pennsylvania": 6.0, "Rhode Island": 7.0, "South Carolina": 6.0, "South Dakota": 4.2,
-        "Tennessee": 7.0, "Texas": 6.25, "Utah": 6.1, "Vermont": 6.0, "Virginia": 5.3,
+        "Choose State": 0.0, "Alabama": 4.0, "Alaska": 0.0, "Arizona": 5.6, "Arkansas": 6.5, "California": 7.25,
+        "Colorado": 2.9, "Connecticut": 6.35, "Delaware": 0.0, "District of Columbia": 6.0, "Florida": 6.0, "Georgia": 4.0,
+        "Hawaii": 4.0, "Idaho": 6.0, "Illinois": 6.25, "Indiana": 7.0, "Iowa": 6.0, "Kansas": 6.5, "Kentucky": 6.0,
+        "Louisiana": 4.45, "Maine": 5.5, "Maryland": 6.0, "Massachusetts": 6.25, "Michigan": 6.0, "Minnesota": 6.875,
+        "Mississippi": 7.0, "Missouri": 4.225, "Montana": 0.0, "Nebraska": 5.5, "Nevada": 6.85, "New Hampshire": 0.0,
+        "New Jersey": 6.625, "New Mexico": 5.125, "New York": 4.0, "North Carolina": 4.75, "North Dakota": 5.0,
+        "Ohio": 5.75, "Oklahoma": 4.5, "Oregon": 0.0, "Pennsylvania": 6.0, "Rhode Island": 7.0, "South Carolina": 6.0,
+        "South Dakota": 4.2, "Tennessee": 7.0, "Texas": 6.25, "Utah": 6.1, "Vermont": 6.0, "Virginia": 5.3,
         "Washington": 6.5, "West Virginia": 6.0, "Wisconsin": 5.0, "Wyoming": 4.0
     ]
 
     let categories = [
-        "Most Categories",
-        "Books / Movies / Music / Media",
-        "Women's Bags",
-        "Musical Instruments",
-        "Trading Cards / Collectibles",
-        "NFTs"
+        ("Most Categories", "tray.fill", Color.blue),
+        ("Books / Movies / Music / Media", "book.fill", Color.purple),
+        ("Women's Bags", "bag.fill", Color.pink),
+        ("Musical Instruments", "guitars.fill", Color.green),
+        ("Trading Cards / Collectibles", "star.fill", Color.orange),
+        ("NFTs", "hexagon.fill", Color.teal)
     ]
-
-    let adRatePresets: [Double] = [2.0, 5.0, 10.0, 15.0]
 
     var itemValue: Double { Double(itemPrice) ?? 0 }
     var shippingValue: Double { Double(shippingPrice) ?? 0 }
@@ -70,158 +61,270 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
-            
+            Color(.systemBackground).ignoresSafeArea()
+
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 24) {
-                    
-                    // --- PAYOUT HEADER ---
-                    VStack(spacing: 8) {
-                        Text("Payout")
-                            .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundColor(Color(white: 0.5))
-                            .textCase(.uppercase)
-                        
-                        Text(String(format: "$%.2f", calculator.payout))
-                            .font(.system(size: 64, weight: .bold, design: .monospaced))
-                            .foregroundColor(calculator.payout >= 0 ? .green : .red)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.4)
-                            .contentTransition(.numericText(countsDown: false))
-                            .animation(.snappy(duration: 0.3, extraBounce: 0.1), value: calculator.payout)
-                            .onTapGesture {
-                                handleSecretTap()
-                            }
-                            .onLongPressGesture(minimumDuration: 0.5) {
-                                copyToClipboard()
-                            }
-                        
-                        if showCopiedMessage {
-                            Text("copied to clipboard.")
-                                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                                .foregroundColor(.green)
-                                .transition(.opacity)
-                        } else {
-                            wittyRemarks
-                        }
-                    }
-                    .padding(.top, 40)
-                    .padding(.bottom, 20)
-
-                    // --- INPUT GRIDS ---
-                    VStack(spacing: 16) {
-                        HStack(spacing: 16) {
-                            inputCard(title: "ITEM PRICE", text: $itemPrice, field: .price)
-                            inputCard(title: "SHIPPING", text: $shippingPrice, field: .shipping)
-                        }
-                        
-                        pickerCard(title: "CATEGORY", selection: $selectedCategory, options: categories)
-                        pickerCard(title: "BUYER STATE", selection: $selectedState, options: ["Choose State"] + stateTaxes.keys.filter { $0 != "Choose State" }.sorted())
-                    }
-                    
-                    // --- TOGGLES AND SETTINGS ---
-                    VStack(spacing: 16) {
-                        toggleCard(title: "250+ listings used this month?", isOn: $over250Listings)
-                        
-                        VStack(spacing: 0) {
-                            toggleCard(title: "Promoted Listing", isOn: $promotedEnabled)
-                            
-                            if promotedEnabled {
-                                VStack(spacing: 16) {
-                                    HStack {
-                                        Text("Ad Rate")
-                                            .foregroundColor(Color(white: 0.5))
-                                            .font(.system(size: 15, weight: .regular, design: .monospaced))
-                                        Spacer()
-                                        
-                                        HStack(spacing: 8) {
-                                            ForEach(adRatePresets, id: \.self) { preset in
-                                                Button(action: {
-                                                    haptic.impactOccurred()
-                                                    withAnimation(.spring) {
-                                                        promotedRate = preset
-                                                    }
-                                                }) {
-                                                    Text("\(preset, specifier: "%.0f")%")
-                                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                                                        .padding(.vertical, 4)
-                                                        .padding(.horizontal, 8)
-                                                        .background(promotedRate == preset ? Color.white : Color(white: 0.2))
-                                                        .foregroundColor(promotedRate == preset ? .black : .white)
-                                                        .cornerRadius(4)
-                                                }
-                                            }
-                                        }
-                                        
-                                        Text("\(promotedRate, specifier: "%.1f")%")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 15, weight: .bold, design: .monospaced))
-                                            .frame(width: 50, alignment: .trailing)
-                                    }
-                                    Slider(value: $promotedRate, in: 1...20, step: 0.5)
-                                        .accentColor(.white)
-                                }
-                                .padding()
-                                .background(Color(white: 0.11))
-                                .cornerRadius(8)
-                                .padding(.top, 4)
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-                        }
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: promotedEnabled)
-                        
-                        toggleCard(title: "International Buyer", isOn: $internationalBuyer)
-                    }
-
-                    // --- CLEAR ALL BUTTON (CLEAN FLAT STYLE) ---
-                    Button(action: clearAllFields) {
-                        HStack {
-                            Spacer()
-                            Text("CLEAR ALL INPUTS")
-                                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                .foregroundColor(Color(white: 0.4))
-                            Spacer()
-                        }
-                        .padding()
-                        .background(Color(white: 0.05))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(white: 0.15), lineWidth: 1)
-                        )
-                    }
-
-                    ResultsSection(calculator: calculator, showBreakdown: $showBreakdown, animation: animation)
+                VStack(spacing: 32) {
+                    headerSection
+                    inputSection
+                    categoryGrid
+                    settingsSection
+                    Spacer().frame(height: 100)
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 20)
+                .padding(.top, 40)
+            }
+
+            floatingBottomBar
+        }
+        .onAppear { haptic.prepare() }
+        .onChange(of: itemPrice) { _, _ in sanitizeInput(&itemPrice) }
+        .onChange(of: shippingPrice) { _, _ in sanitizeInput(&shippingPrice) }
+        .sheet(isPresented: $showBreakdown) {
+            BreakdownView(calculator: calculator)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+    }
+
+    var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Estimated Payout")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(.secondary)
+            
+            Text(String(format: "$%.2f", calculator.payout))
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .foregroundColor(calculator.payout >= 0 ? .primary : .red)
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+                .contentTransition(.numericText(countsDown: false))
+                .animation(.snappy, value: calculator.payout)
+                .onTapGesture { handleSecretTap() }
+                .onLongPressGesture { copyToClipboard() }
+
+            if showCopiedMessage {
+                Text("Copied.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.green)
+            } else {
+                wittyRemarks
             }
         }
-        .preferredColorScheme(.dark)
-        .onAppear {
-            haptic.prepare()
-        }
-        .onChange(of: itemPrice) { oldValue, newValue in sanitizeInput(&itemPrice) }
-        .onChange(of: shippingPrice) { oldValue, newValue in sanitizeInput(&shippingPrice) }
-        .onChange(of: promotedEnabled) { oldValue, newValue in haptic.impactOccurred() }
-        .onChange(of: internationalBuyer) { oldValue, newValue in haptic.impactOccurred() }
-        .onChange(of: over250Listings) { oldValue, newValue in haptic.impactOccurred() }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func handleSecretTap() {
+    var inputSection: some View {
+        HStack(spacing: 16) {
+            inputField(title: "Item Price", text: $itemPrice, field: .price)
+            inputField(title: "Shipping", text: $shippingPrice, field: .shipping)
+        }
+    }
+
+    var categoryGrid: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Category")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+            
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                ForEach(categories, id: \.0) { cat in
+                    Button(action: {
+                        haptic.impactOccurred()
+                        withAnimation(.spring) { selectedCategory = cat.0 }
+                    }) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Image(systemName: cat.1)
+                                .font(.system(size: 24))
+                                .foregroundColor(cat.2)
+                            Text(cat.0.components(separatedBy: " / ").first ?? cat.0)
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(.primary)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: 110)
+                        .background(selectedCategory == cat.0 ? cat.2.opacity(0.15) : Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(selectedCategory == cat.0 ? cat.2.opacity(0.4) : Color.clear, lineWidth: 2)
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+    }
+
+    var settingsSection: some View {
+        VStack(spacing: 16) {
+            pickerCard(title: "Buyer State", selection: $selectedState, options: ["Choose State"] + stateTaxes.keys.filter { $0 != "Choose State" }.sorted())
+            
+            VStack(spacing: 0) {
+                Toggle("Promoted Listing", isOn: $promotedEnabled)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .padding()
+                
+                if promotedEnabled {
+                    Divider().padding(.horizontal)
+                    VStack(spacing: 16) {
+                        HStack {
+                            Text("Ad Rate")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(promotedRate, specifier: "%.1f")%")
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                        }
+                        Slider(value: $promotedRate, in: 1...20, step: 0.5)
+                            .tint(.blue)
+                    }
+                    .padding()
+                }
+            }
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+
+            Toggle("250+ Listings Used", isOn: $over250Listings)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+
+            Toggle("International Buyer", isOn: $internationalBuyer)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+        }
+    }
+
+    var floatingBottomBar: some View {
+        VStack {
+            Spacer()
+            HStack(spacing: 0) {
+                Button(action: clearAllFields) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                }
+                
+                Divider().frame(height: 24)
+                
+                Button(action: { haptic.impactOccurred() }) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                }
+                
+                Divider().frame(height: 24)
+                
+                Button(action: { showBreakdown = true }) {
+                    Text("Breakdown")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(height: 64)
+            .padding(.horizontal, 8)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .shadow(color: Color.black.opacity(0.1), radius: 20, y: 10)
+            .padding(.horizontal, 40)
+            .padding(.bottom, 20)
+        }
+    }
+
+    func inputField(title: String, text: Binding<String>, field: Field) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+                Text("$").foregroundColor(.secondary)
+                TextField("0.00", text: text)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: field)
+            }
+            .font(.system(size: 24, weight: .bold, design: .rounded))
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(focusedField == field ? Color.blue : Color.clear, lineWidth: 2)
+        )
+    }
+
+    func pickerCard(title: String, selection: Binding<String>, options: [String]) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+            Spacer()
+            Picker("", selection: selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(.primary)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    @ViewBuilder
+    var wittyRemarks: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if calculator.payout < 0 {
+                Text("Maksat eBaylle että ne ottaa sun romut.")
+            } else if calculator.payout < 5 && itemValue > 0 {
+                Text("Miksi ees myyt tätä paskaa?")
+            } else if itemValue > 10000 {
+                Text("Rahanpesu on taitolaji.")
+            } else if selectedCategory == "NFTs" {
+                Text("Kuvittele myyväsi jotain vitun jpeggejä vuonna 2026.")
+            } else if over250Listings && calculator.payout < 10 && itemValue > 0 {
+                Text("250+ listausta ja oot silti täysin perseauki.")
+            } else if selectedState == "California" && calculator.estimatedTax > 50 {
+                Text("Kalifornian verot vie sut katuojaan.")
+            } else if selectedCategory == "Trading Cards / Collectibles" && !promotedEnabled {
+                Text("Onnea pahvin myymiseen ilman mainoksia.")
+            } else if calculator.sellerFees > 50 {
+                Text("eBay lähettää terveisiä lompakollesi.")
+            } else if shippingValue > itemValue && itemValue > 0 {
+                Text("Mitä vittua sä lähetät, jääkaapin?")
+            } else if promotedRate > 15 && promotedEnabled {
+                Text("Ostat käytännössä vaan saatanasti mainostilaa.")
+            } else if internationalBuyer && calculator.sellerFees > 50 {
+                Text("Globaali taloudellinen tuho.")
+            } else {
+                Text("Bitetheapple on ainoa joka vetää tästä välistä.")
+            }
+        }
+        .font(.system(size: 14, weight: .medium, design: .rounded))
+        .foregroundColor(.secondary)
+    }
+
+    func handleSecretTap() {
         secretTapCount += 1
-        
         if secretTapCount >= 3 && secretTapCount < 10 {
-            // Give an increasingly heavy vibration on every tap after 3
             haptic.impactOccurred(intensity: CGFloat(Double(secretTapCount) / 10.0))
         }
-        
         if secretTapCount >= 10 {
-            fatalError("OH ONE MORE FUCKING TIME AND ILL CRASH THIS APP")
+            fatalError("LOPETA SE VITUN NAKUTUS TAI KAADAN TÄN PASKAN")
         }
     }
 
-    private func clearAllFields() {
+    func clearAllFields() {
         haptic.impactOccurred(intensity: 1.0)
         withAnimation {
             itemPrice = ""
@@ -232,121 +335,23 @@ struct ContentView: View {
             promotedEnabled = false
             promotedRate = 5.0
             internationalBuyer = false
-            showBreakdown = false
             focusedField = nil
             secretTapCount = 0
         }
     }
-    
-    private func copyToClipboard() {
+
+    func copyToClipboard() {
         haptic.impactOccurred(intensity: 0.8)
         UIPasteboard.general.string = String(format: "%.2f", calculator.payout)
         withAnimation { showCopiedMessage = true }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation { showCopiedMessage = false }
         }
     }
-    
-    private func sanitizeInput(_ input: inout String) {
+
+    func sanitizeInput(_ input: inout String) {
         if input.count > 1 && input.hasPrefix("0") && !input.hasPrefix("0.") {
             input.removeFirst()
         }
-    }
-    
-    private func inputCard(title: String, text: Binding<String>, field: Field) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                .foregroundColor(Color(white: 0.5))
-            
-            HStack(spacing: 4) {
-                Text("$")
-                    .foregroundColor(Color(white: 0.3))
-                    .font(.system(size: 22, weight: .regular, design: .monospaced))
-                TextField("0.00", text: text)
-                    .keyboardType(.decimalPad)
-                    .font(.system(size: 22, weight: .regular, design: .monospaced))
-                    .foregroundColor(.white)
-                    .focused($focusedField, equals: field)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(white: 0.11))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(focusedField == field ? Color.white : Color.clear, lineWidth: 1.5)
-                .padding(-1)
-        )
-        .animation(.easeInOut(duration: 0.2), value: focusedField)
-    }
-
-    private func pickerCard(title: String, selection: Binding<String>, options: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                .foregroundColor(Color(white: 0.5))
-            
-            Picker("", selection: selection) {
-                ForEach(options, id: \.self) { option in
-                    Text(option).tag(option)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(.white)
-            .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding()
-        .background(Color(white: 0.11))
-        .cornerRadius(8)
-    }
-    
-    private func toggleCard(title: String, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
-            Text(title)
-                .font(.system(size: 15, weight: .regular, design: .monospaced))
-                .foregroundColor(.white)
-        }
-        .tint(.white)
-        .padding()
-        .background(Color(white: 0.11))
-        .cornerRadius(8)
-    }
-    
-    @ViewBuilder
-    var wittyRemarks: some View {
-        VStack(spacing: 4) {
-            if calculator.payout < 0 {
-                Text("congratulations, you paid eBay to take your item")
-            } else if calculator.payout < 5 && itemValue > 0 {
-                Text("why are you selling this lol")
-            } else if itemValue > 10000 {
-                Text("money laundering at its finest")
-            } else if selectedCategory == "NFTs" {
-                Text("bro still trying to sell jpegs in 2026")
-            } else if over250Listings && calculator.payout < 10 && itemValue > 0 {
-                Text("250+ listings and you're still broke")
-            } else if selectedState == "California" && calculator.estimatedTax > 50 {
-                Text("california taxes hitting harder than reality")
-            } else if selectedCategory == "Trading Cards / Collectibles" && !promotedEnabled {
-                Text("good luck selling cardboard without ads")
-            } else if calculator.sellerFees > 50 {
-                Text("eBay sends their regards")
-            } else if shippingValue > itemValue && itemValue > 0 {
-                Text("what are you shipping, a refrigerator?")
-            } else if promotedRate > 15 && promotedEnabled {
-                Text("you're just buying acres of ad now")
-            } else if internationalBuyer && calculator.sellerFees > 50 {
-                Text("global financial devastation")
-            } else {
-                Text("app and witty remarks written by bitetheapple")
-            }
-        }
-        .font(.system(size: 12, weight: .regular, design: .monospaced))
-        .foregroundColor(Color(white: 0.4))
-        .animation(.easeInOut, value: calculator.payout)
     }
 }
