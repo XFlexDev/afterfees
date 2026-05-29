@@ -1,10 +1,3 @@
-//
-//  AfterFeesCalculator.swift
-//  AfterFees
-//
-//  Created by dylan on 5/23/26.
-//
-
 import Foundation
 
 struct AfterFeesCalculator {
